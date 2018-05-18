@@ -1,5 +1,11 @@
-#/usr/bin/python3
+#/usr/bin/python
 
+# pip install scapy
+# dnf install redhat-rpm-config
+# Unzip the setproctitle file by:
+# tar -xvzf setproctitle-1.1.10.tar.gz
+# Go to setproctitle directory and type:
+# python setup.py install
 import socket, os, sys, time, logging
 from scapy.all import *
 import setproctitle
