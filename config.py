@@ -1,2 +1,7 @@
 portKnocks = [1111, 2222, 3333]
-targetIP = "127.0.0.1"
+delay = 1
+listenPort = 8005
+localPort = 8505
+remotePort = 8506
+localIP = "192.168.0.21"
+remoteIP = "192.168.0.22"
