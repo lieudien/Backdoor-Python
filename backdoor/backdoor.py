@@ -17,6 +17,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 code = 0
 localIP = config.localIP
 localPort = config.localPort
+listenPort = config.listenPort
 remoteIP = config.remoteIP
 remotePort = config.remotePort
 protocol = config.protocol
