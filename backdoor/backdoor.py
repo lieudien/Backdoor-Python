@@ -10,6 +10,7 @@ import socket, os, sys, time, logging
 from scapy.all import *
 import setproctitle
 import config
+import encryption
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 code = 0
