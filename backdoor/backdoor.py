@@ -11,6 +11,7 @@ from scapy.all import *
 import setproctitle
 import config
 import encryption
+import netifaces
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 code = 0

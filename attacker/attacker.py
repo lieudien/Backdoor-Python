@@ -15,6 +15,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 localIP = config.localIP
 localPort = config.localPort
+listenPort = config.listenPort
 remoteIP = config.remoteIP
 remotePort = config.remotePort
 protocol = config.protocol
@@ -26,7 +27,8 @@ def checkRootPrivilege():
 def portKnocking():
     ports = config.portKnocks
     for port in ports:
-        packet = IP(dst=remoteIP, src=localIP)/UDP(dport=remotePort, sport=localPort)
+        packet = IP(dst=remoteIP, src=localIP)/UDP(dport=listenPort, sport=port)
+        print("Knock...%d" % port)
         send(packet)
         time.sleep(config.delay)
 
