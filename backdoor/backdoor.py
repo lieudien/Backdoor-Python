@@ -94,7 +94,7 @@ def is_incoming(packet):
 def main():
     maskProcess()
     checkRootPrivilege()
-    mFilter = protocol + "and src host " + remoteIP + " and dst port " + str(localPort) + \
+    mFilter = protocol + " and src host " + remoteIP + " and dst port " + str(localPort) + \
             " and src port " + str(remotePort)
     while code != 3:
         sniff(filter="udp and dst port {}".format(config.listenPort), prn=portKnocking, count=1)
