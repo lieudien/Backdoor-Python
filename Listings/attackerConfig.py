@@ -7,7 +7,7 @@ ttl = 5
 # Local configuration
 listenPort = 8005
 localPort = 8506
-localIP = "192.168.0.22"
+localIP = "127.0.0.1"
 # Remote configuration
 remotePort = 8505
-remoteIP = "192.168.0.21"
+remoteIP = "127.0.0.1"
