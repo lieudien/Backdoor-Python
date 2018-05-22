@@ -2,13 +2,13 @@ from Crypto.Cipher import AES
 from Crypto import Random
 import base64
 import hashlib
-import config
+import attackerConfig
 
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * \
             chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
-masterkey = hashlib.md5((config.password).encode('utf8')).hexdigest()
+masterkey = hashlib.md5((attackerConfig.password).encode('utf8')).hexdigest()
 
 def encrypt(data):
     raw = pad(data)

