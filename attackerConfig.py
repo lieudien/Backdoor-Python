@@ -6,5 +6,5 @@ remotePort = 8505
 localIP = "192.168.0.22"
 remoteIP = "192.168.0.21"
 protocol = "tcp"
-password = "comp8505"
+password = 'comp8505'
 ttl = 5
